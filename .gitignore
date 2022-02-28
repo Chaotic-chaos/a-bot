@@ -1,0 +1,5 @@
+config.yaml
+*/__pycache__
+bot.session
+bot*
+deve*

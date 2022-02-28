@@ -1,0 +1,31 @@
+# Project:       /root/projects/Pythons/telePicCutBot
+# File Name:     config.pub.yaml
+# Author:        Chaos
+# Email:         life0531@foxmail.com
+# Date:          2022/02/28
+
+bot:
+  api_id:                   # Must
+  api_hash:                 # Must
+  bot_token:                # Must
+proxy:                      # Optional
+  proxy_type:               # socks5/http
+  addr: None
+  port: None
+  # 'username': 'foo',      # (optional) username if the proxy requires auth
+  # 'password': 'bar',      # (optional) password if the proxy requires auth
+  # 'rdns': True            # (optional) whether to use remote or local resolve, default remote
+chats: # chats u want to listen: follow the entity's rule of telethon
+  - xxx
+  - xxx 
+params:
+  cut_step: 1080            # Static step if 'dynamic' is False
+  send_limit: 6             # Limits of how many pics send once a time
+  dynamic: True             # dynamic decide the cut step or not
+  dynamic_gate: 3.5         # 32/9 by @Zhpjy
+  dynamic_formula:          # (pic.height * x)/(pix.width * y) by @Jesse
+    x: 3
+    y: 7
+
+log:
+  level: 'INFO'             # DEBUG/INFO/ERROR
