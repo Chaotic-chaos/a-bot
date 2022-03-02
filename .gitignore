@@ -3,3 +3,5 @@ config.yaml
 bot.session
 bot*
 deve*
+sources.list
+*.tar.gz
