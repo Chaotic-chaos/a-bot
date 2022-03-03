@@ -24,14 +24,31 @@ async def new_message_handler(event):
         '''
         logging.info("Reciving a new media")
         photo_name = "default.jpg"
-        try:
-            # send type is a photo, must be downloaded
-            event.media.photo
-        except:
-            # check is a picture or not
-            if not event.media.document.mime_type.startswith("image"):
+
+        # try:
+        #     # send type is a photo, must be downloaded
+        #     event.media.photo
+        #     event.media.document
+        # except:
+        #     logging.warn("Is not a picture-like media, return anyway")
+        #     return
+
+        if not hasattr(event.media, "photo") and not hasattr(event.media, "document"):
+            # not a cuttable picture
+            logging.warn("Is not a picture-like media, return anyway")
+            return
+
+        if hasattr(event.media, "document"):
+            if not event.media.document.mime_type.startswith("image/"):
+                # not a cuttable picture
+                logging.warn("Is not a picture-like media, return anyway")
                 return
+        
+        try:
             photo_name = event.media.document.attributes[1].file_name
+        except:
+            logging.warn("Cannot get the photo name, using the default name")
+
         logging.info(f"Photo name is {photo_name}")
         photo_bytes = bytes()
         photo_bytes = await event.download_media(file=bytes, progress_callback=show_progress_download)
