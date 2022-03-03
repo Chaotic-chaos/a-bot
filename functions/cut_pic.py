@@ -15,23 +15,18 @@ import os
 import shutil
 from sys import path_hooks
 import cv2
+import numpy as np
+import io
 from functions.glue import get_config, show_progress_upload
 
 from functions.login import get_bot
 
-async def cut_and_reply(event, path):
+async def cut_and_reply(event, data, photo_name):
     # get config
     config = get_config()
 
-    pic = cv2.imread(path)
-    sub_path = "".join(path.split(".")[:-1])
-    if os.path.exists(sub_path):
-        # 存在历史同名路径，删除
-        shutil.rmtree(sub_path)
-    else:
-        # 不存在路径，创建
-        os.mkdir(sub_path)
-    # print(pic.shape)
+    pic = cv2_read_bytes(data)
+
     # check total cuts
     if config['params']['dynamic']:
         # dynamic cuts
@@ -42,27 +37,24 @@ async def cut_and_reply(event, path):
         logging.info("Using static method for the total cuts")
         step = config['params']['cut_step']
         total_cuts = ceil(pic.shape[0]/step)
-    logging.info(f"Cutting {os.path.split(path)[-1]} for {total_cuts} pieces")
+    logging.info(f"Cutting for {total_cuts} pieces")
+    files = []
     for cut in range(total_cuts):
         start = cut*step
         cropped = pic[start:start+step, :]
-
-        # saving
-        cv2.imwrite(os.path.join(sub_path, f"cut_{cut}.{path.split('.')[-1]}"), cropped)
+        imgbytes = cv2.imencode(photo_name, cropped)[1]
+        file = io.BytesIO(imgbytes)
+        file.name = photo_name
+        files.append(file)
     
     bot = get_bot()
 
     # send the pics back
-    files = [os.path.join(sub_path, e) for e in os.listdir(sub_path)]
-    # sort the pics with file name
-    files.sort(key=lambda name: int(os.path.split(name)[-1].split('.')[0][4:]))
     send_limit = config['params']['send_limit']
-    logging.info(f"Sending {sub_path} back")
+    logging.info(f"Sending pics back")
     for send_step in range(ceil(len(files)/send_limit)):
         await bot.send_file(event.chat, file=files[send_step*send_limit:(send_step*send_limit)+send_limit], reply_to=event, progress_callback=show_progress_upload)
-    logging.info(f"All done for pic {path}")
+    logging.info(f"All done for pic {photo_name}")
 
-    # Delete all the files
-    logging.warn("Deleting all the files")
-    shutil.rmtree(sub_path)
-    os.remove(path)
+def cv2_read_bytes(photo_bytes):
+    return cv2.imdecode(np.fromstring(photo_bytes, dtype=np.uint8), cv2.IMREAD_COLOR)

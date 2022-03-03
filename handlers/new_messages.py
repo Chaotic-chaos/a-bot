@@ -1,10 +1,9 @@
 import logging
 from math import ceil
 import os
-import shutil
-import cv2
 
-from functions.cut_pic import cut_and_reply
+
+from functions.cut_pic import cut_and_reply,cv2_read_bytes
 from functions.glue import get_config, show_progress_download
 from functions.login import login
 
@@ -24,6 +23,7 @@ async def new_message_handler(event):
         There is two different ways to send pics: Photo or Document
         '''
         logging.info("Reciving a new media")
+        photo_name = "default.jpg"
         try:
             # send type is a photo, must be downloaded
             event.media.photo
@@ -31,17 +31,22 @@ async def new_message_handler(event):
             # check is a picture or not
             if not event.media.document.mime_type.startswith("image"):
                 return
-        path = await event.download_media(file="media/", progress_callback=show_progress_download)
-        logging.info(f"New media downloaded in {path}")
-        # print(path)
+            photo_name = event.media.document.attributes[1].file_name
+        logging.info(f"Photo name is {photo_name}")
+        photo_bytes = bytes()
+        photo_bytes = await event.download_media(file=bytes, progress_callback=show_progress_download)
+        logging.info(f"New media downloaded")
+        # print(photo_bytes)
 
         # check if the image's height bigger than 1000
         config = get_config()
-        length_width_ratio = cv2.imread(path).shape[0]/cv2.imread(path).shape[1]
+        photo = cv2_read_bytes(photo_bytes)
+        length_width_ratio = photo.shape[0]/photo.shape[1]
         if length_width_ratio > config['params']['dynamic_gate']:
             logging.info(f"Cutting and Replying")
-            await cut_and_reply(event=event, path=path)
+            await cut_and_reply(event=event, data=photo_bytes, photo_name=photo_name)
         else:
             # remove the pic and do nothing for now
-            logging.warn(f"{os.path.split(path)[-1]} is no need to cut, deleting...")
-            os.remove(path=path)
+            logging.warn(f"no need to cut, clean...")
+            photo = b'\x00'
+
